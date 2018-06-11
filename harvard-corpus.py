@@ -2,10 +2,13 @@ from pymarc import MARCReader
 import os
 import sys
 from nltk import word_tokenize
+from nltk.stem.porter import *
 
 # Process the Harvard Dataset and load as NLTK corpus.
 def main():
-    data_dir = '/Users/pablocc/harvard_data/' 
+    stemmer = PorterStemmer()
+    data_dir = '/Users/pablocc/harvard_data/'
+
     for filename in os.listdir(data_dir):
         if os.path.isdir(data_dir + filename) or filename[0] == '.':
             continue
@@ -39,11 +42,13 @@ def main():
                         source,
                         library,
                         notes]
-                
+
                 # Concatenate all fields into string.
                 document = ' '.join(list(filter(None.__ne__, document_fields)))
-                tokens = word_tokenize(document)
-                print(tokens)
+                words = word_tokenize(document)
+                # Words stemming.
+                words_root = [stemmer.stem(word) for word in words]
+                print(words_root)
 
 # Get record title.
 def get_title(record):
