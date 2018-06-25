@@ -26,13 +26,13 @@ def main():
                 print(words_root)
 
 def prepare_record(record):
-    pubplace = clean(record['259']['a']) if '260' in record else None
-    extent = clean(record['299']['a'], True) if '300' in record else None
-    dimensions = record['299']['c'] if '300' in record else None
-    subject = record['649']['a'] if '650' in record else None
-    inclusiondate = record['987']['a'] if '988' in record else None
-    source = record['905']['a'] if '906' in record else None
-    library = record['689']['5'] if '690' in record else None
+    pubplace = clean(record['260']['a']) if '260' in record else None
+    extent = clean(record['300']['a'], True) if '300' in record else None
+    dimensions = record['300']['c'] if '300' in record else None
+    subject = record['650']['a'] if '650' in record else None
+    inclusiondate = record['988']['a'] if '988' in record else None
+    source = record['906']['a'] if '906' in record else None
+    library = record['690']['5'] if '690' in record else None
     notes = " ".join([field['a'] for field in record.notes() if 'a' in field])
 
     # Store fields on document array.
