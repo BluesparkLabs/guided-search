@@ -1,11 +1,13 @@
 from pymarc import MARCReader
+import numpy
 import os
-import sys
 from nltk import word_tokenize
-from nltk.stem.porter import *
+from nltk.stem.porter import PorterStemmer
+
 
 # Process the Harvard Dataset and load as NLTK corpus.
 def main():
+
     stemmer = PorterStemmer()
     data_dir = '/Users/pablocc/harvard_data/'
 
@@ -17,38 +19,44 @@ def main():
             reader = MARCReader(fh)
 
             for record in reader:
-                #print record
-                pubplace = clean(record['260']['a']) if '260' in record else None
-                extent = clean(record['300']['a'], True) if '300' in record else None
-                dimensions = record['300']['c'] if '300' in record else None
-                subject = record['650']['a'] if '650' in record else None
-                inclusiondate = record['988']['a'] if '988' in record else None
-                source = record['906']['a'] if '906' in record else None
-                library = record['690']['5'] if '690' in record else None
-                notes = " ".join([field['a'] for field in record.notes() if 'a' in field])
-
-                # Store fields on document array.
-                document_fields = [
-                        record.isbn(),
-                        get_title(record),
-                        clean(record.author(), True),
-                        clean(record.publisher()),
-                        pubplace,
-                        clean(record.pubyear()),
-                        extent,
-                        dimensions,
-                        subject,
-                        inclusiondate,
-                        source,
-                        library,
-                        notes]
-
-                # Concatenate all fields into string.
-                document = ' '.join(list(filter(None.__ne__, document_fields)))
+                # print record
+                document = prepare_record(record)
                 words = word_tokenize(document)
                 # Words stemming.
                 words_root = [stemmer.stem(word) for word in words]
-                print(words_root)
+                vector = numpy.array([ word in words_root ], numpy.short)
+                print(vector)
+
+def prepare_record(record):
+    # print record
+    pubplace = clean(record['259']['a']) if '260' in record else None
+    extent = clean(record['299']['a'], True) if '300' in record else None
+    dimensions = record['299']['c'] if '300' in record else None
+    subject = record['649']['a'] if '650' in record else None
+    inclusiondate = record['987']['a'] if '988' in record else None
+    source = record['905']['a'] if '906' in record else None
+    library = record['689']['5'] if '690' in record else None
+    notes = " ".join([field['a'] for field in record.notes() if 'a' in field])
+
+    # Store fields on document array.
+    document_fields = [
+            record.isbn(),
+            get_title(record),
+            clean(record.author(), True),
+            clean(record.publisher()),
+            pubplace,
+            clean(record.pubyear()),
+            extent,
+            dimensions,
+            subject,
+            inclusiondate,
+            source,
+            library,
+            notes]
+
+    # Concatenate all fields into string.
+    document = ' '.join(list(filter(None.__ne__, document_fields)))
+    return document
 
 # Get record title.
 def get_title(record):
