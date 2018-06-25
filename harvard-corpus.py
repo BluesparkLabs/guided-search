@@ -1,15 +1,14 @@
-from pymarc import MARCReader
-import numpy
-import os
-from sys import exit
 from nltk import word_tokenize
 from nltk.stem.porter import PorterStemmer
+from pymarc import MARCReader
+from sys import exit
+import numpy
+import os
 
 
 # Process the Harvard Dataset and load as NLTK corpus.
 def main():
 
-    stemmer = PorterStemmer()
     data_dir = '/Users/pablocc/harvard_data/'
 
     for filename in os.listdir(data_dir):
@@ -20,10 +19,14 @@ def main():
             reader = MARCReader(fh)
             for record in reader:
                 document = prepare_record(record)
-                words = word_tokenize(document)
-                # Words stemming.
-                words_root = [stemmer.stem(word) for word in words]
-                print(words_root)
+                words = words_extract(document)
+
+def words_extract(document):
+    stemmer = PorterStemmer()
+    words = word_tokenize(document)
+    # Words stemming.
+    words_root = [stemmer.stem(word) for word in words]
+    return words_root
 
 def prepare_record(record):
     pubplace = clean(record['260']['a']) if '260' in record else None
