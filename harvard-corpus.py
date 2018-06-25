@@ -1,6 +1,7 @@
 from pymarc import MARCReader
 import numpy
 import os
+from sys import exit
 from nltk import word_tokenize
 from nltk.stem.porter import PorterStemmer
 
@@ -17,18 +18,14 @@ def main():
 
         with open(data_dir + filename, 'rb') as fh:
             reader = MARCReader(fh)
-
             for record in reader:
-                # print record
                 document = prepare_record(record)
                 words = word_tokenize(document)
                 # Words stemming.
                 words_root = [stemmer.stem(word) for word in words]
-                vector = numpy.array([ word in words_root ], numpy.short)
-                print(vector)
+                print(words_root)
 
 def prepare_record(record):
-    # print record
     pubplace = clean(record['259']['a']) if '260' in record else None
     extent = clean(record['299']['a'], True) if '300' in record else None
     dimensions = record['299']['c'] if '300' in record else None
