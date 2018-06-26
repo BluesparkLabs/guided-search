@@ -2,14 +2,21 @@ from nltk import word_tokenize
 from nltk.stem.porter import PorterStemmer
 from pymarc import MARCReader
 from sys import exit
+import nltk.corpus
 import numpy
 import os
+import hashlib
 
+nltk.download('stopwords')
+stop_words = set(nltk.corpus.stopwords.words('english'))
+corpus_words = set()
+documents = {}
 
 # Process the Harvard Dataset and load as NLTK corpus.
 def main():
 
     data_dir = '/Users/pablocc/harvard_data/'
+    counter = 0
 
     for filename in os.listdir(data_dir):
         if os.path.isdir(data_dir + filename) or filename[0] == '.':
@@ -19,13 +26,28 @@ def main():
             reader = MARCReader(fh)
             for record in reader:
                 document = prepare_record(record)
-                words = words_extract(document)
+                counter += 1
+                print("%s - processing document %s."
+                      % (counter, document['id']))
+                words_extract(document)
 
 def words_extract(document):
     stemmer = PorterStemmer()
-    words = word_tokenize(document)
+    # Tokenize document words.
+    words = word_tokenize(document['body'])
     # Words stemming.
     words_root = [stemmer.stem(word) for word in words]
+    # Save document words for vectorization phase.
+    documents[document['id']] = words_root
+    # Add document words to corpus words.
+    for word_root in words_root:
+        corpus_words.add(word_root)
+
+def document_vector(document):
+    """ Builds a document words vector. """
+    vector = numpy.array([
+        word in words_root and not word in stop_words
+        for word in words], numpy.short)
     return words_root
 
 def prepare_record(record):
@@ -55,7 +77,9 @@ def prepare_record(record):
             notes]
 
     # Concatenate all fields into string.
-    document = ' '.join(list(filter(None.__ne__, document_fields)))
+    body = ' '.join(list(filter(None.__ne__, document_fields)))
+    docid = hashlib.md5(body.encode('utf-8')).hexdigest()
+    document = {'id': docid, 'body': body}
     return document
 
 # Get record title.
