@@ -2,10 +2,11 @@ from nltk import word_tokenize
 from nltk.stem.porter import PorterStemmer
 from pymarc import MARCReader
 from sys import exit
+import hashlib
 import nltk.corpus
 import numpy
 import os
-import hashlib
+import sqlite3
 
 nltk.download('stopwords')
 stop_words = set(nltk.corpus.stopwords.words('english'))
@@ -17,6 +18,7 @@ def main():
 
     data_dir = '/Users/pablocc/harvard_data/'
     counter = 0
+    db = db_connect()
 
     for filename in os.listdir(data_dir):
         if os.path.isdir(data_dir + filename) or filename[0] == '.':
@@ -29,7 +31,36 @@ def main():
                 counter += 1
                 print("%s - processing document %s."
                       % (counter, document['id']))
-                words_extract(document)
+                index_document(db, document)
+
+def db_connect():
+    """ Connect to DB and init tables schema. """
+    # Documents table schema.
+    create_documents_table = '''CREATE TABLE IF NOT EXISTS documents
+    (id VARCHAR(40) PRIMARY KEY, document LONGTEXT)'''
+    # Documents words index schema.
+    create_index_table = '''CREATE TABLE IF NOT EXISTS documents_words
+    (id VARCHAR(40) PRIMARY KEY, word VARCHAR)'''
+    # Connect to DB and create the tables.
+    conn = sqlite3.connect('./index.sqlite')
+    db = conn.cursor()
+    db.execute(create_documents_table)
+    db.execute(create_index_table)
+    return db
+
+def index_document(db, document):
+    """ Store document words on DB. """
+
+    # Extract document words.
+    words_extract(document)
+
+    try:
+        db.execute('INSERT INTO documents_words (id, body) VALUES (?, ?)',
+                   (document['id'], document['body']))
+    except sqlite3.Error as err:
+        print("Error occurred: %s" % err)
+    else:
+        print(db.rowcount)
 
 def words_extract(document):
     stemmer = PorterStemmer()
@@ -38,10 +69,7 @@ def words_extract(document):
     # Words stemming.
     words_root = [stemmer.stem(word) for word in words]
     # Save document words for vectorization phase.
-    documents[document['id']] = words_root
-    # Add document words to corpus words.
-    for word_root in words_root:
-        corpus_words.add(word_root)
+    document['words'] = words_root
 
 def document_vector(document):
     """ Builds a document words vector. """
