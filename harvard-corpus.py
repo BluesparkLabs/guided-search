@@ -40,12 +40,16 @@ def db_connect():
     (id VARCHAR(40) PRIMARY KEY, body LONGTEXT)'''
     # Documents words index schema.
     create_index_table = '''CREATE TABLE IF NOT EXISTS documents_words
-    (id VARCHAR(40) PRIMARY KEY, word VARCHAR)'''
+    (id VARCHAR(40), word VARCHAR)'''
+    # Document ID index to speed up word retrievals.
+    create_index_table_index = '''CREATE INDEX IF NOT EXISTS
+    document_id ON documents_words (id)'''
     # Connect to DB and create the tables.
     connection = sqlite3.connect('./index.sqlite')
     db = connection.cursor()
     db.execute(create_documents_table)
     db.execute(create_index_table)
+    db.execute(create_index_table_index)
     return connection
 
 def index_document(connection, document):
@@ -61,6 +65,7 @@ def index_document(connection, document):
         # Skip indexation if document exists.
         if result:
             print("Document %s is already indexed." % (document['id']))
+            return
 
         # Extract document words.
         words_extract(document)
@@ -69,6 +74,7 @@ def index_document(connection, document):
                    (document['id'], document['body']))
 
         for word in document['words']:
+            print("%s - %s" % (document['id'], word))
             db.execute('INSERT INTO documents_words (id, word) VALUES (?, ?)',
                        (document['id'], word))
 
