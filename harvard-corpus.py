@@ -18,7 +18,7 @@ def main():
 
     data_dir = '/Users/pablocc/harvard_data/'
     counter = 0
-    db = db_connect()
+    connection = db_connect()
 
     for filename in os.listdir(data_dir):
         if os.path.isdir(data_dir + filename) or filename[0] == '.':
@@ -31,36 +31,36 @@ def main():
                 counter += 1
                 print("%s - processing document %s."
                       % (counter, document['id']))
-                index_document(db, document)
+                index_document(connection, document)
 
 def db_connect():
     """ Connect to DB and init tables schema. """
     # Documents table schema.
     create_documents_table = '''CREATE TABLE IF NOT EXISTS documents
-    (id VARCHAR(40) PRIMARY KEY, document LONGTEXT)'''
+    (id VARCHAR(40) PRIMARY KEY, body LONGTEXT)'''
     # Documents words index schema.
     create_index_table = '''CREATE TABLE IF NOT EXISTS documents_words
     (id VARCHAR(40) PRIMARY KEY, word VARCHAR)'''
     # Connect to DB and create the tables.
-    conn = sqlite3.connect('./index.sqlite')
-    db = conn.cursor()
+    connection = sqlite3.connect('./index.sqlite')
+    db = connection.cursor()
     db.execute(create_documents_table)
     db.execute(create_index_table)
-    return db
+    return connection
 
-def index_document(db, document):
+def index_document(connection, document):
     """ Store document words on DB. """
 
     # Extract document words.
     words_extract(document)
+    db = connection.cursor()
 
     try:
-        db.execute('INSERT INTO documents_words (id, body) VALUES (?, ?)',
+        db.execute('INSERT INTO documents (id, body) VALUES (?, ?)',
                    (document['id'], document['body']))
+        connection.commit()
     except sqlite3.Error as err:
         print("Error occurred: %s" % err)
-    else:
-        print(db.rowcount)
 
 def words_extract(document):
     stemmer = PorterStemmer()
@@ -106,6 +106,7 @@ def prepare_record(record):
 
     # Concatenate all fields into string.
     body = ' '.join(list(filter(None.__ne__, document_fields)))
+    print(body)
     docid = hashlib.md5(body.encode('utf-8')).hexdigest()
     document = {'id': docid, 'body': body}
     return document
