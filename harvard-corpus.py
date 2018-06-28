@@ -51,16 +51,32 @@ def db_connect():
 def index_document(connection, document):
     """ Store document words on DB. """
 
-    # Extract document words.
-    words_extract(document)
     db = connection.cursor()
 
     try:
+        # Check if document exists.
+        db.execute("SELECT id FROM documents WHERE id = ?", (document['id'],))
+        result = db.fetchone()
+
+        # Skip indexation if document exists.
+        if result:
+            print("Document %s is already indexed." % (document['id']))
+
+        # Extract document words.
+        words_extract(document)
+
         db.execute('INSERT INTO documents (id, body) VALUES (?, ?)',
                    (document['id'], document['body']))
+
+        for word in document['words']:
+            db.execute('INSERT INTO documents_words (id, word) VALUES (?, ?)',
+                       (document['id'], word))
+
+        # Commit inserts.
         connection.commit()
     except sqlite3.Error as err:
         print("Error occurred: %s" % err)
+        exit()
 
 def words_extract(document):
     stemmer = PorterStemmer()
