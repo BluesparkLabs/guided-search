@@ -74,7 +74,10 @@ def index_document(connection, document):
         db.execute('INSERT INTO documents (id, body) VALUES (?, ?)',
                    (document['id'], document['body']))
 
-        for word in document['words']:
+        for word in document['words']: # type: str
+            # Skip short words.
+            if len(word) <= 2:
+                continue
             print("%s - %s" % (document['id'], word))
             db.execute('INSERT INTO documents_words (id, word) VALUES (?, ?)',
                        (document['id'], word))
