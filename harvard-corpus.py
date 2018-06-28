@@ -11,8 +11,6 @@ import string
 
 nltk.download('stopwords')
 stop_words = set(nltk.corpus.stopwords.words('english'))
-corpus_words = set()
-documents = {}
 
 # Process the Harvard Dataset and load as NLTK corpus.
 def main():
@@ -20,6 +18,7 @@ def main():
     data_dir = '/Users/pablocc/harvard_data/'
     counter = 0
     connection = db_connect()
+    # all_words = documents_words(connection)
 
     for filename in os.listdir(data_dir):
         if os.path.isdir(data_dir + filename) or filename[0] == '.':
@@ -33,6 +32,7 @@ def main():
                 print("%s - processing document %s."
                       % (counter, document['id']))
                 index_document(connection, document)
+
 
 def db_connect():
     """ Connect to DB and init tables schema. """
@@ -166,6 +166,18 @@ def clean(element, isAuthor=False):
             return element[:-1].strip()
 
         return element.strip()
+
+def documents_words(connection):
+    """Extract document words from DB index.
+
+    :param sqlite3.Connection connection: DB connection.
+    :returns: A list of all unique documents words.
+
+    """
+    db = connection.cursor()
+    db.execute('SELECT DISTINCT(word) FROM documents_words')
+    result = db.fetchall()
+    return result
 
 if __name__ == "__main__":
     main()
