@@ -7,6 +7,7 @@ import nltk.corpus
 import numpy
 import os
 import sqlite3
+import string
 
 nltk.download('stopwords')
 stop_words = set(nltk.corpus.stopwords.words('english'))
@@ -86,8 +87,12 @@ def index_document(connection, document):
 
 def words_extract(document):
     stemmer = PorterStemmer()
+    body = document['body']
+    # Remove punctuation.
+    translator = str.maketrans('', '', string.punctuation)
+    body = body.translate(translator)
     # Tokenize document words.
-    words = word_tokenize(document['body'])
+    words = word_tokenize(body)
     # Words stemming.
     words_root = [stemmer.stem(word) for word in words]
     # Save document words for vectorization phase.
