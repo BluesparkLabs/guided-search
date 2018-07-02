@@ -1,3 +1,6 @@
+from math import log10
+from operator import itemgetter
+from statistics import mean
 from nltk import word_tokenize
 from nltk.stem.porter import PorterStemmer
 from pymarc import MARCReader
@@ -18,7 +21,9 @@ def main():
     data_dir = '/Users/pablocc/harvard_data/'
     counter = 0
     connection = db_connect()
-    # all_words = documents_words(connection)
+    all_words = documents_words(connection)
+    print(len(all_words))
+    exit()
 
     for filename in os.listdir(data_dir):
         if os.path.isdir(data_dir + filename) or filename[0] == '.':
@@ -174,10 +179,31 @@ def documents_words(connection):
     :returns: A list of all unique documents words.
 
     """
+
+    all_words = []
     db = connection.cursor()
-    db.execute('SELECT DISTINCT(word) FROM documents_words')
+    # Count total documents.
+    db.execute('''SELECT COUNT(id) as total FROM documents''')
+    total_docs = db.fetchone()[0]
+    # Get words list with frequency filtering words that only occurs in 2 or
+    # less documents that are not relevant.
+    db.execute('''SELECT word, count(word) AS frequency FROM documents_words
+               GROUP BY WORD HAVING frequency >= 5''')
     result = db.fetchall()
-    return result
+
+    for row in result:
+        # Calculate inverse document frequency.
+        idf = round(log10((total_docs + 1) / (row[1] + 1)), 2)
+        # Remove terms that are not very relevant to reduce the words
+        # vector size, based on manual inspection below idf 2.5 seems
+        # that words are too frequent to be considered representative.
+        # See: https://moz.com/blog/inverse-document-frequency-and-the-importance-of-uniqueness
+        if idf <= 3:
+            continue
+        # Keep the work for vectorization.
+        all_words.append(row[0])
+
+    return all_words
 
 if __name__ == "__main__":
     main()
