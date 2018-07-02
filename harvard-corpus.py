@@ -1,6 +1,4 @@
 from math import log10
-from operator import itemgetter
-from statistics import mean
 from nltk import word_tokenize
 from nltk.stem.porter import PorterStemmer
 from pymarc import MARCReader
@@ -21,8 +19,7 @@ def main():
     data_dir = '/Users/pablocc/harvard_data/'
     counter = 0
     connection = db_connect()
-    all_words = documents_words(connection)
-    print(len(all_words))
+    document_vectors = documents_vectors(connection)
     exit()
 
     for filename in os.listdir(data_dir):
@@ -106,11 +103,25 @@ def words_extract(document):
     # Save document words for vectorization phase.
     document['words'] = words_root
 
-def document_vector(document):
-    """ Builds a document words vector. """
-    vector = numpy.array([
-        word in words_root and not word in stop_words
-        for word in words], numpy.short)
+def documents_vectors(connection):
+    """ Builds indexed documents words vectors. """
+
+    all_words = corpus_words(connection)
+    documents = indexed_documents(connection)
+    db = connection.cursor()
+
+    for doc_id in documents:
+        # Get document words
+        db.execute('''SELECT word FROM documents_words WHERE id = ?''', doc_id)
+        doc_words = db.fetchall()
+        # Create document words vector.
+        vector = numpy.array(
+            [word in doc_words for word in all_words],
+            numpy.short
+        )
+        print(vector)
+        exit()
+
     return words_root
 
 def prepare_record(record):
@@ -172,7 +183,21 @@ def clean(element, isAuthor=False):
 
         return element.strip()
 
-def documents_words(connection):
+def indexed_documents(connection):
+    """ Get indexed documents list.
+
+    :param sqlite3.Connection connection: DB connection.
+    :returns: A list of indexed documents.
+
+    """
+
+    db = connection.cursor()
+    db.execute('''SELECT id FROM documents''')
+    result = db.fetchall()
+
+    return result
+
+def corpus_words(connection):
     """Extract document words from DB index.
 
     :param sqlite3.Connection connection: DB connection.
