@@ -1,3 +1,4 @@
+from sklearn.cluster import KMeans
 from math import log10
 from nltk import word_tokenize
 from nltk.stem.porter import PorterStemmer
@@ -16,7 +17,12 @@ download('stopwords')
 numpy.set_printoptions(threshold=numpy.nan)
 
 def main():
-    documents_vectors()
+    matrix = documents_vectors()
+    num_clusters = 50
+    km = KMeans(n_clusters=num_clusters)
+    km.fit(matrix)
+    clusters = km.labels_.tolist()
+    print(clusters)
 
 def index_corpus():
     """
@@ -111,17 +117,18 @@ def documents_vectors():
     """ Builds indexed documents words vectors. """
 
     documents = indexed_documents()
-    # Filter terms that appears in more than 98% of the documents
-    # and terms that do not appear on at least 2% of the documents.
+    total_documents = len(documents)
+    print("Processing %d documents." % (total_documents))
+    # Filter terms that appears in more than 99% of the documents
+    # and terms that do not appear on at least 1% of the documents.
     vectorizer = TfidfVectorizer(tokenizer=indexed_document_words,
                                  stop_words=stopwords.words('english'),
-                                 max_df=0.98,
-                                 min_df=0.02,
+                                 max_df=0.99,
+                                 min_df=0.01,
                                  lowercase=True)
-    tfidf_model = vectorizer.fit_transform(documents)
-    terms = vectorizer.get_feature_names()
-    print(terms)
-    exit()
+    vectors = vectorizer.fit_transform(documents)
+    # terms = vectorizer.get_feature_names()
+    return vectors
 
     return vectors
 
