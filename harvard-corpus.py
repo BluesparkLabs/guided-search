@@ -19,8 +19,7 @@ def main():
 
     data_dir = '/Users/pablocc/harvard_data/'
     counter = 0
-    connection = db_connect()
-    vectors = documents_vectors(connection)
+    vectors = documents_vectors()
     print(vectors)
     exit()
 
@@ -35,7 +34,7 @@ def main():
                 counter += 1
                 print("%s - processing document %s."
                       % (counter, document['id']))
-                index_document(connection, document)
+                index_document(document)
 
 
 def db_connect():
@@ -57,7 +56,7 @@ def db_connect():
     db.execute(create_index_table_index)
     return connection
 
-def index_document(connection, document):
+def index_document(document):
     """ Store document words on DB. """
 
     db = connection.cursor()
@@ -105,12 +104,12 @@ def words_extract(document):
     # Save document words for vectorization phase.
     document['words'] = words_root
 
-def documents_vectors(connection):
+def documents_vectors():
     """ Builds indexed documents words vectors. """
 
     vectors = {}
-    all_words = corpus_words(connection)
-    documents = indexed_documents(connection)
+    all_words = corpus_words()
+    documents = indexed_documents()
     db = connection.cursor()
     counter = 0
     total_docs = len(documents)
@@ -191,10 +190,9 @@ def clean(element, isAuthor=False):
 
         return element.strip()
 
-def indexed_documents(connection):
+def indexed_documents():
     """ Get indexed documents list.
 
-    :param sqlite3.Connection connection: DB connection.
     :returns: A list of indexed documents.
 
     """
@@ -205,10 +203,9 @@ def indexed_documents(connection):
 
     return result
 
-def corpus_words(connection):
+def corpus_words():
     """Extract document words from DB index.
 
-    :param sqlite3.Connection connection: DB connection.
     :returns: A list of all unique documents words.
 
     """
@@ -239,4 +236,5 @@ def corpus_words(connection):
     return all_words
 
 if __name__ == "__main__":
+    connection = db_connect()
     main()
