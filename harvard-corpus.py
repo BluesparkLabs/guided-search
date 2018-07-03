@@ -2,22 +2,21 @@ from math import log10
 from nltk import word_tokenize
 from nltk.stem.porter import PorterStemmer
 from pymarc import MARCReader
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sys import exit
 import hashlib
-import nltk.corpus
+from nltk.corpus import stopwords
+from nltk.downloader import download
 import numpy
 import os
 import sqlite3
 import string
 
-nltk.download('stopwords')
-stop_words = set(nltk.corpus.stopwords.words('english'))
+download('stopwords')
 numpy.set_printoptions(threshold=numpy.nan)
 
 def main():
-    vectors = documents_vectors()
-    print(vectors)
-    exit()
+    documents_vectors()
 
 def index_corpus():
     """
@@ -111,27 +110,18 @@ def words_extract(document):
 def documents_vectors():
     """ Builds indexed documents words vectors. """
 
-    vectors = {}
-    all_words = corpus_words()
     documents = indexed_documents()
-    db = connection.cursor()
-    counter = 0
-    total_docs = len(documents)
-
-    for doc_id in documents:
-        counter += 1
-        print("%d of %d - processing words vector for document '%s'"
-              % (counter, total_docs, doc_id[0]))
-        # Get document words
-        db.execute('''SELECT word FROM documents_words WHERE id = ?''', doc_id)
-        result = db.fetchall()
-        # Extract the first column from all rows.
-        doc_words = [row[0] for row in result]
-        # Create document words vector.
-        vectors[doc_id] = numpy.array(
-            [word in doc_words for word in all_words],
-            numpy.short
-        )
+    # Filter terms that appears in more than 98% of the documents
+    # and terms that do not appear on at least 2% of the documents.
+    vectorizer = TfidfVectorizer(tokenizer=indexed_document_words,
+                                 stop_words=stopwords.words('english'),
+                                 max_df=0.98,
+                                 min_df=0.02,
+                                 lowercase=True)
+    tfidf_model = vectorizer.fit_transform(documents)
+    terms = vectorizer.get_feature_names()
+    print(terms)
+    exit()
 
     return vectors
 
@@ -205,16 +195,24 @@ def indexed_documents():
     db.execute('''SELECT id FROM documents''')
     result = db.fetchall()
 
-    return result
+    return [row[0] for row in result]
 
-def indexed_document_words(body):
+def indexed_document_words(doc_id):
     """ Get indexed document words.
 
-    :param str body: The document body text.
+    :param str doc_id: The document ID.
     :returns: A list of document words.
 
     """
-    pass
+
+    print("Tokens for document '%s'" % (doc_id))
+    # Get document words
+    db = connection.cursor()
+    db.execute('''SELECT word FROM documents_words WHERE id = ?''', (doc_id,))
+    result = db.fetchall()
+    # Extract the first column from all rows.
+    document_words = [row[0] for row in result]
+    return document_words
 
 def corpus_words():
     """Extract document words from DB index.
