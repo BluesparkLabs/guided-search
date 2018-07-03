@@ -12,6 +12,7 @@ import string
 
 nltk.download('stopwords')
 stop_words = set(nltk.corpus.stopwords.words('english'))
+numpy.set_printoptions(threshold=numpy.nan)
 
 # Process the Harvard Dataset and load as NLTK corpus.
 def main():
@@ -19,7 +20,8 @@ def main():
     data_dir = '/Users/pablocc/harvard_data/'
     counter = 0
     connection = db_connect()
-    document_vectors = documents_vectors(connection)
+    documents_vectors = documents_vectors(connection)
+    print(documents_vectors)
     exit()
 
     for filename in os.listdir(data_dir):
@@ -106,6 +108,7 @@ def words_extract(document):
 def documents_vectors(connection):
     """ Builds indexed documents words vectors. """
 
+    vectors = []
     all_words = corpus_words(connection)
     documents = indexed_documents(connection)
     db = connection.cursor()
@@ -113,16 +116,16 @@ def documents_vectors(connection):
     for doc_id in documents:
         # Get document words
         db.execute('''SELECT word FROM documents_words WHERE id = ?''', doc_id)
-        doc_words = db.fetchall()
+        result = db.fetchall()
+        # Extract the first column from all rows.
+        doc_words = [row[0] for row in result]
         # Create document words vector.
-        vector = numpy.array(
+        vectors[doc_id] = numpy.array(
             [word in doc_words for word in all_words],
             numpy.short
         )
-        print(vector)
-        exit()
 
-    return words_root
+    return vectors
 
 def prepare_record(record):
     pubplace = clean(record['260']['a']) if '260' in record else None
