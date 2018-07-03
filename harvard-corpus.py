@@ -14,14 +14,18 @@ nltk.download('stopwords')
 stop_words = set(nltk.corpus.stopwords.words('english'))
 numpy.set_printoptions(threshold=numpy.nan)
 
-# Process the Harvard Dataset and load as NLTK corpus.
 def main():
-
-    data_dir = '/Users/pablocc/harvard_data/'
-    counter = 0
     vectors = documents_vectors()
     print(vectors)
     exit()
+
+def index_corpus():
+    """
+    Process corpus documents indexation.
+    """
+
+    data_dir = '/Users/pablocc/harvard_data/'
+    counter = 0
 
     for filename in os.listdir(data_dir):
         if os.path.isdir(data_dir + filename) or filename[0] == '.':
@@ -202,6 +206,15 @@ def indexed_documents():
     result = db.fetchall()
 
     return result
+
+def indexed_document_words(body):
+    """ Get indexed document words.
+
+    :param str body: The document body text.
+    :returns: A list of document words.
+
+    """
+    pass
 
 def corpus_words():
     """Extract document words from DB index.
