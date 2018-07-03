@@ -20,8 +20,8 @@ def main():
     data_dir = '/Users/pablocc/harvard_data/'
     counter = 0
     connection = db_connect()
-    documents_vectors = documents_vectors(connection)
-    print(documents_vectors)
+    vectors = documents_vectors(connection)
+    print(vectors)
     exit()
 
     for filename in os.listdir(data_dir):
@@ -108,12 +108,17 @@ def words_extract(document):
 def documents_vectors(connection):
     """ Builds indexed documents words vectors. """
 
-    vectors = []
+    vectors = {}
     all_words = corpus_words(connection)
     documents = indexed_documents(connection)
     db = connection.cursor()
+    counter = 0
+    total_docs = len(documents)
 
     for doc_id in documents:
+        counter += 1
+        print("%d of %d - processing words vector for document '%s'"
+              % (counter, total_docs, doc_id[0]))
         # Get document words
         db.execute('''SELECT word FROM documents_words WHERE id = ?''', doc_id)
         result = db.fetchall()
