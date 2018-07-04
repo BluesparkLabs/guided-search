@@ -1,3 +1,4 @@
+from sklearn.externals import joblib
 from sklearn.cluster import KMeans
 from math import log10
 from nltk import word_tokenize
@@ -17,12 +18,19 @@ download('stopwords')
 numpy.set_printoptions(threshold=numpy.nan)
 
 def main():
-    matrix = documents_vectors()
-    num_clusters = 50
-    km = KMeans(n_clusters=num_clusters)
-    km.fit(matrix)
-    clusters = km.labels_.tolist()
-    print(clusters)
+    matrix, terms = documents_vectors()
+    print(terms)
+
+    try:
+        km = joblib.load('doc_cluster.pkl')
+    except FileNotFoundError:
+        num_clusters = 50
+        km = KMeans(n_clusters=num_clusters)
+        km.fit(matrix)
+        clusters = km.labels_.tolist()
+        joblib.dump(km, 'doc_cluster.pkl')
+
+    order_centroids = km.cluster_centers_.argsort()[:, ::-1]
 
 def index_corpus():
     """
@@ -127,10 +135,8 @@ def documents_vectors():
                                  min_df=0.01,
                                  lowercase=True)
     vectors = vectorizer.fit_transform(documents)
-    # terms = vectorizer.get_feature_names()
-    return vectors
-
-    return vectors
+    terms = vectorizer.get_feature_names()
+    return [vectors, terms]
 
 def prepare_record(record):
     pubplace = clean(record['260']['a']) if '260' in record else None
