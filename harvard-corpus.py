@@ -156,6 +156,7 @@ def documents_vectors():
 
     """
 
+    documents = indexed_documents()
     total_documents = len(documents)
     print("Processing %d documents." % (total_documents))
     # Filter terms that appears in more than 99% of the documents
