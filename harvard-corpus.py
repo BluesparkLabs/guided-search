@@ -1,17 +1,18 @@
-from scipy.sparse.csr import csr_matrix
-from sklearn.externals import joblib
-from sklearn.cluster import KMeans
 from math import log10
 from nltk import word_tokenize
+from nltk.corpus import stopwords
+from nltk.downloader import download
 from nltk.stem.porter import PorterStemmer
 from pymarc import MARCReader
+from scipy.sparse.csr import csr_matrix
+from sklearn.cluster import KMeans
+from sklearn.externals import joblib
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sys import exit
 import hashlib
-from nltk.corpus import stopwords
-from nltk.downloader import download
 import numpy
 import os
+import pandas
 import sqlite3
 import string
 
@@ -19,6 +20,7 @@ download('stopwords')
 numpy.set_printoptions(threshold=numpy.nan)
 
 def main():
+    num_clusters = 50
 
     # Load vectorize from dump or process documents vectorization
     try:
@@ -31,15 +33,26 @@ def main():
     try:
         km = joblib.load('doc_cluster.pkl')
     except FileNotFoundError:
-        num_clusters = 50
         km = KMeans(n_clusters=num_clusters)
         km.fit(matrix)
         joblib.dump(km, 'doc_cluster.pkl')
 
+    documents = indexed_documents()
     terms = vectorizer.get_feature_names()
-    print(terms)
     clusters = km.labels_.tolist()
-    order_centroids = km.cluster_centers_.argsort()[:, ::-1]
+    centroids = km.cluster_centers_.argsort()[:, ::-1]
+    frame = pandas.DataFrame(documents, index = [clusters] , columns = ['doc_id'])
+
+    for i in range(num_clusters):
+        print("Cluster %d:" % (i))
+        for word_idx in centroids[i, 0:9]:
+            word = terms[word_idx]
+            print(' %s' % (word), end=',')
+        print("\n")
+
+        print("Titles:")
+        for doc_id in frame.ix[i]['doc_id'].values.tolist():
+            print(doc_id)
 
 def index_corpus():
     """
@@ -138,7 +151,6 @@ def documents_vectors():
 
     """
 
-    documents = indexed_documents()
     total_documents = len(documents)
     print("Processing %d documents." % (total_documents))
     # Filter terms that appears in more than 99% of the documents
@@ -148,7 +160,7 @@ def documents_vectors():
                                  max_df=0.99,
                                  min_df=0.01,
                                  lowercase=True)
-    matrix = vectorizer.fit_transform(documents)
+    matrix = vectorizer.fit_transform(documents) # type: csr_matrix
     return matrix, vectorizer
 
 def prepare_record(record):
