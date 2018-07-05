@@ -54,6 +54,9 @@ def main():
         for doc_id in frame.ix[i]['doc_id'].values.tolist():
             print(' - %s' % (document_field_value(doc_id, 'body')))
 
+    print("\n")
+    print("====================================")
+
 def index_corpus():
     """
     Process corpus documents indexation.
