@@ -50,9 +50,9 @@ def main():
             print(' %s' % (word), end=',')
         print("\n")
 
-        print("Titles:")
+        print("Documents:")
         for doc_id in frame.ix[i]['doc_id'].values.tolist():
-            print(doc_id)
+            print(' - %s' % (document_field_value(doc_id, 'body')))
 
 def index_corpus():
     """
@@ -234,6 +234,21 @@ def indexed_documents():
     result = db.fetchall()
 
     return [row[0] for row in result]
+
+def document_field_value(doc_id, field_name):
+    """ Get indexed document field value.
+
+    :param str doc_id: The document ID.
+    :param str field_name: The document field name to get value from.
+    :returns: The field value.
+    :rtype: str
+
+    """
+    db = connection.cursor()
+    db.execute('''SELECT {} FROM documents WHERE id = ?'''.format(field_name), (doc_id,))
+    result = db.fetchone()
+    return result[0]
+
 
 def indexed_document_words(doc_id):
     """ Get indexed document words.
