@@ -1,3 +1,4 @@
+from scipy.sparse.csr import csr_matrix
 from sklearn.externals import joblib
 from sklearn.cluster import KMeans
 from math import log10
@@ -18,18 +19,26 @@ download('stopwords')
 numpy.set_printoptions(threshold=numpy.nan)
 
 def main():
-    matrix, terms = documents_vectors()
-    print(terms)
 
+    # Load vectorize from dump or process documents vectorization
+    try:
+        vectorizer = joblib.load('vectorizer.pkl')
+    except FileNotFoundError:
+        matrix, vectorizer = documents_vectors()
+        joblib.dump(vectorizer, 'vectorizer.pkl')
+
+    # Load cluster model from dump or process clustering.
     try:
         km = joblib.load('doc_cluster.pkl')
     except FileNotFoundError:
         num_clusters = 50
         km = KMeans(n_clusters=num_clusters)
         km.fit(matrix)
-        clusters = km.labels_.tolist()
         joblib.dump(km, 'doc_cluster.pkl')
 
+    terms = vectorizer.get_feature_names()
+    print(terms)
+    clusters = km.labels_.tolist()
     order_centroids = km.cluster_centers_.argsort()[:, ::-1]
 
 def index_corpus():
@@ -122,7 +131,12 @@ def words_extract(document):
     document['words'] = words_root
 
 def documents_vectors():
-    """ Builds indexed documents words vectors. """
+    """ Builds indexed documents words vectors.
+
+    :returns: List with corpus words matrix and the vectorizer object.
+    :rtype: csr_matrix, TfidfVectorizer
+
+    """
 
     documents = indexed_documents()
     total_documents = len(documents)
@@ -134,9 +148,8 @@ def documents_vectors():
                                  max_df=0.99,
                                  min_df=0.01,
                                  lowercase=True)
-    vectors = vectorizer.fit_transform(documents)
-    terms = vectorizer.get_feature_names()
-    return [vectors, terms]
+    matrix = vectorizer.fit_transform(documents)
+    return matrix, vectorizer
 
 def prepare_record(record):
     pubplace = clean(record['260']['a']) if '260' in record else None
