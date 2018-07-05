@@ -20,7 +20,10 @@ download('stopwords')
 numpy.set_printoptions(threshold=numpy.nan)
 
 def main():
-    num_clusters = 50
+    documents = indexed_documents()
+    total_docs = len(documents)
+    # We generate one cluster for each 500 docs.
+    num_clusters = round(total_docs / 500)
 
     # Load vectorize from dump or process documents vectorization
     try:
@@ -37,7 +40,6 @@ def main():
         km.fit(matrix)
         joblib.dump(km, 'doc_cluster.pkl')
 
-    documents = indexed_documents()
     terms = vectorizer.get_feature_names()
     clusters = km.labels_.tolist()
     centroids = km.cluster_centers_.argsort()[:, ::-1]
