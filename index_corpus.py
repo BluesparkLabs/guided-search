@@ -13,7 +13,7 @@ class IndexCorpusCommand(Command):
     """
     Index corpus documents.
 
-    gs:index-corpus
+    guided-search:index
 
     """
 
