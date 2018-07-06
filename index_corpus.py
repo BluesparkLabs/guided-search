@@ -18,8 +18,28 @@ class IndexCorpusCommand(Command):
     """
 
     def handle(self):
-        self.connection = self.db_connect()
+        """
+        Process corpus documents indexation.
+
+        """
+
         download('stopwords')
+        self.connection = self.db_connect()
+        data_dir = '/Users/pablocc/harvard_data/'
+        counter = 0
+
+        for filename in os.listdir(data_dir):
+            if os.path.isdir(data_dir + filename) or filename[0] == '.':
+                continue
+
+            with open(data_dir + filename, 'rb') as fh:
+                reader = MARCReader(fh)
+                for record in reader:
+                    document = self.prepare_record(record)
+                    counter += 1
+                    print("%s - processing document %s."
+                        % (counter, document['id']))
+                    self.index_document(document)
 
     def db_connect(self):
         """ Connect to DB and init tables schema. """
@@ -111,27 +131,6 @@ class IndexCorpusCommand(Command):
         words_root = [stemmer.stem(word) for word in words]
         # Save document words for vectorization phase.
         document['words'] = words_root
-
-    def index_corpus(self):
-        """
-        Process corpus documents indexation.
-        """
-
-        data_dir = '/Users/pablocc/harvard_data/'
-        counter = 0
-
-        for filename in os.listdir(data_dir):
-            if os.path.isdir(data_dir + filename) or filename[0] == '.':
-                continue
-
-            with open(data_dir + filename, 'rb') as fh:
-                reader = MARCReader(fh)
-                for record in reader:
-                    document = self.prepare_record(record)
-                    counter += 1
-                    print("%s - processing document %s."
-                        % (counter, document['id']))
-                    self.index_document(document)
 
     def index_document(self, document):
         """ Store document words on DB. """
