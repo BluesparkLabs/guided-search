@@ -83,6 +83,8 @@ class ClusterCorpusCommand(Command):
         )
 
         for i in range(num_clusters):
+            print("\n\n")
+            print("====================================")
             print("Cluster %d:" % (i))
             for word_idx in centroids[i, 0:9]:
                 word = terms[word_idx]
@@ -92,9 +94,7 @@ class ClusterCorpusCommand(Command):
             print("Documents:")
             for doc_id in frame.ix[i]['doc_id'].values.tolist():
                 print(' - %s' % (self.document_field_value(doc_id, 'body')))
-
-        print("\n")
-        print("====================================")
+                print("------------------------------------")
 
     def db_connect(self):
         return IndexDB
