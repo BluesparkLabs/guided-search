@@ -1,5 +1,5 @@
 from cleo import Command
-from index_db import IndexDB
+from indexdb import IndexDB
 from math import log10
 from nltk.corpus import stopwords
 from sklearn.cluster import KMeans
@@ -13,7 +13,7 @@ import sqlite3
 
 numpy.set_printoptions(threshold=numpy.nan)
 index_db = IndexDB()
-connection = index_db.connection()
+connection = index_db.handler()
 
 
 def indexed_document_words(doc_id):
@@ -52,7 +52,7 @@ class ClusterCorpusCommand(Command):
         """
 
         index_db = IndexDB()
-        self.connection = index_db.connection()
+        self.connection = index_db.handler()
         documents = self.indexed_documents()
         total_docs = len(documents)
         # We generate one cluster for each 500 docs.

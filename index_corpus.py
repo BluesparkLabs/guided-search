@@ -1,5 +1,5 @@
 from cleo import Command
-from index_db import IndexDB
+from indexdb import IndexDB
 from nltk import word_tokenize
 from nltk.downloader import download
 from nltk.stem.porter import PorterStemmer
@@ -24,8 +24,8 @@ class IndexCorpusCommand(Command):
         """
 
         download('stopwords')
-        index_db = IndexDB()
-        self.connection = index_db.connection()
+        indexdb = IndexDB()
+        self.connection = indexdb.handler()
         data_dir = '/Users/pablocc/harvard_data/'
         counter = 0
 

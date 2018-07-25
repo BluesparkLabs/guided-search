@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
-from index_corpus import IndexCorpusCommand
-from cluster_corpus import ClusterCorpusCommand
 from cleo import Application
+from cluster_corpus import ClusterCorpusCommand
+from index_corpus import IndexCorpusCommand
+from indexdb import IndexDB
+from os import sys
 
 if __name__ == '__main__':
     application = Application()
