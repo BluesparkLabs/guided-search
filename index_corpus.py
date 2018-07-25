@@ -1,13 +1,13 @@
 from cleo import Command
+from index_db import IndexDB
 from nltk import word_tokenize
 from nltk.downloader import download
 from nltk.stem.porter import PorterStemmer
 from pymarc import MARCReader
 from sys import exit
 import hashlib
-import sqlite3
-import string
 import os
+import string
 
 class IndexCorpusCommand(Command):
     """
@@ -24,7 +24,8 @@ class IndexCorpusCommand(Command):
         """
 
         download('stopwords')
-        self.connection = self.db_connect()
+        index_db = IndexDB()
+        self.connection = index_db.connection()
         data_dir = '/Users/pablocc/harvard_data/'
         counter = 0
 
@@ -40,25 +41,6 @@ class IndexCorpusCommand(Command):
                     print("%s - processing document %s."
                         % (counter, document['id']))
                     self.index_document(document)
-
-    def db_connect(self):
-        """ Connect to DB and init tables schema. """
-        # Documents table schema.
-        create_documents_table = '''CREATE TABLE IF NOT EXISTS documents
-        (id VARCHAR(40) PRIMARY KEY, body LONGTEXT)'''
-        # Documents words index schema.
-        create_index_table = '''CREATE TABLE IF NOT EXISTS documents_words
-        (id VARCHAR(40), word VARCHAR)'''
-        # Document ID index to speed up word retrievals.
-        create_index_table_index = '''CREATE INDEX IF NOT EXISTS
-        document_id ON documents_words (id)'''
-        # Connect to DB and create the tables.
-        connection = sqlite3.connect('./index.sqlite')
-        db = connection.cursor()
-        db.execute(create_documents_table)
-        db.execute(create_index_table)
-        db.execute(create_index_table_index)
-        return connection
 
     def prepare_record(self, record):
         pubplace = self.clean(record['260']['a']) if '260' in record else None

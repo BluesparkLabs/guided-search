@@ -1,4 +1,5 @@
 from cleo import Command
+from index_db import IndexDB
 from math import log10
 from nltk.corpus import stopwords
 from sklearn.cluster import KMeans
@@ -11,6 +12,29 @@ import pandas
 import sqlite3
 
 numpy.set_printoptions(threshold=numpy.nan)
+index_db = IndexDB()
+connection = index_db.connection()
+
+
+def indexed_document_words(doc_id):
+    """ Get indexed document words.
+
+    :param str doc_id: The document ID.
+    :returns: A list of document words.
+
+    """
+
+    print("Tokens for document '%s'" % (doc_id))
+    # Get document words
+    db = connection.cursor()
+    db.execute(
+        '''SELECT word FROM documents_words WHERE id = ?''',
+        (doc_id,)
+    )
+    result = db.fetchall()
+    # Extract the first column from all rows.
+    document_words = [row[0] for row in result]
+    return document_words
 
 
 class ClusterCorpusCommand(Command):
@@ -27,7 +51,8 @@ class ClusterCorpusCommand(Command):
 
         """
 
-        self.connection = self.db_connect()
+        index_db = IndexDB()
+        self.connection = index_db.connection()
         documents = self.indexed_documents()
         total_docs = len(documents)
         # We generate one cluster for each 500 docs.
@@ -72,23 +97,7 @@ class ClusterCorpusCommand(Command):
         print("====================================")
 
     def db_connect(self):
-        """ Connect to DB and init tables schema. """
-        # Documents table schema.
-        create_documents_table = '''CREATE TABLE IF NOT EXISTS documents
-        (id VARCHAR(40) PRIMARY KEY, body LONGTEXT)'''
-        # Documents words index schema.
-        create_index_table = '''CREATE TABLE IF NOT EXISTS documents_words
-        (id VARCHAR(40), word VARCHAR)'''
-        # Document ID index to speed up word retrievals.
-        create_index_table_index = '''CREATE INDEX IF NOT EXISTS
-        document_id ON documents_words (id)'''
-        # Connect to DB and create the tables.
-        connection = sqlite3.connect('./index.sqlite')
-        db = connection.cursor()
-        db.execute(create_documents_table)
-        db.execute(create_index_table)
-        db.execute(create_index_table_index)
-        return connection
+        return IndexDB
 
     def documents_vectors(self):
         """ Builds indexed documents words vectors.
