@@ -63,7 +63,6 @@ class ClusterCorpusCommand(Command):
             vectorizer = joblib.load('vectorizer.pkl')
         except FileNotFoundError:
             matrix, vectorizer = self.documents_vectors()
-            joblib.dump(vectorizer, 'vectorizer.pkl')
 
         terms = vectorizer.get_feature_names()
         print("\nUsing %d features for clustering.\n" % (len(terms)))
@@ -80,7 +79,10 @@ class ClusterCorpusCommand(Command):
                 verbose=1
             )
             km.fit(matrix)
+
+            # Save clusters and vectorizer.
             joblib.dump(km, 'doc_cluster.pkl')
+            joblib.dump(vectorizer, 'vectorizer.pkl')
 
         clusters = km.labels_.tolist()
         centroids = km.cluster_centers_.argsort()[:, ::-1]
@@ -90,6 +92,7 @@ class ClusterCorpusCommand(Command):
             columns=['doc_id']
         )
 
+        # Print report of clusters.
         for i in range(num_clusters):
             print("\n\n====================================")
             print("Cluster %d:" % (i))
