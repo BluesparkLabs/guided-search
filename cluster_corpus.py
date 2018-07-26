@@ -65,15 +65,23 @@ class ClusterCorpusCommand(Command):
             matrix, vectorizer = self.documents_vectors()
             joblib.dump(vectorizer, 'vectorizer.pkl')
 
+        terms = vectorizer.get_feature_names()
+        print("\nUsing %d features for clustering.\n" % (len(terms)))
+
         # Load cluster model from dump or process clustering.
         try:
             km = joblib.load('doc_cluster.pkl')
         except FileNotFoundError:
-            km = KMeans(n_clusters=num_clusters)
+            km = KMeans(
+                n_clusters=num_clusters,
+                n_init=5,
+                max_iter=100,
+                precompute_distances=True,
+                verbose=1
+            )
             km.fit(matrix)
             joblib.dump(km, 'doc_cluster.pkl')
 
-        terms = vectorizer.get_feature_names()
         clusters = km.labels_.tolist()
         centroids = km.cluster_centers_.argsort()[:, ::-1]
         frame = pandas.DataFrame(
@@ -83,9 +91,9 @@ class ClusterCorpusCommand(Command):
         )
 
         for i in range(num_clusters):
-            print("\n\n")
-            print("====================================")
+            print("\n\n====================================")
             print("Cluster %d:" % (i))
+            print("====================================\n\n")
             for word_idx in centroids[i, 0:9]:
                 word = terms[word_idx]
                 print(' %s' % (word), end=',')
@@ -117,6 +125,7 @@ class ClusterCorpusCommand(Command):
             stop_words=stopwords.words('english'),
             max_df=0.99,
             min_df=0.01,
+            max_features=1000,
             lowercase=True
         )
         matrix = vectorizer.fit_transform(documents)  # type: csr_matrix
