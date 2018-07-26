@@ -104,9 +104,6 @@ class ClusterCorpusCommand(Command):
                 print(' - %s' % (self.document_field_value(doc_id, 'body')))
                 print("------------------------------------")
 
-    def db_connect(self):
-        return IndexDB
-
     def documents_vectors(self):
         """ Builds indexed documents words vectors.
 
