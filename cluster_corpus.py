@@ -6,6 +6,7 @@ from sklearn.cluster import KMeans
 from sklearn.externals import joblib
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sys import exit
+from termcolor import colored
 import numpy
 import os
 import pandas
@@ -94,13 +95,12 @@ class ClusterCorpusCommand(Command):
 
         # Print report of clusters.
         for i in range(num_clusters):
-            print("\n\n====================================")
-            print("Cluster %d:" % (i))
-            print("====================================\n\n")
+            print(colored("\n\n====================================", 'yellow'))
+            print(colored("Cluster %d:" % (i), 'yellow'), end='')
             for word_idx in centroids[i, 0:9]:
                 word = terms[word_idx]
-                print(' %s' % (word), end=',')
-            print("\n")
+                print(colored(' %s' % (word), 'yellow'), end=',')
+            print(colored("\n====================================\n\n", 'yellow'))
 
             print("Documents:")
             for doc_id in frame.ix[i]['doc_id'].values.tolist():
